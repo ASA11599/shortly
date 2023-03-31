@@ -31,6 +31,8 @@ func (fra *FiberRedisApp) Start() error {
 }
 
 func (fra *FiberRedisApp) Stop() error {
+	err := fra.stopFiberApp()
+	if err != nil { return err }
 	return fra.closeRedisClient()
 }
 
@@ -50,4 +52,8 @@ func (fra *FiberRedisApp) initFiberApp() error {
 
 func (fra *FiberRedisApp) closeRedisClient() error {
 	return fra.redisClient.Close()
+}
+
+func (fra *FiberRedisApp) stopFiberApp() error {
+	return fra.fiberApp.Shutdown()
 }
