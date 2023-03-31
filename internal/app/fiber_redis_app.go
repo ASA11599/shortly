@@ -2,7 +2,6 @@ package app
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -12,10 +11,15 @@ type FiberRedisApp struct {
 	redisClient *redis.Client
 }
 
-func NewFiberRedisApp() *FiberRedisApp {
-	return &FiberRedisApp{
-		redisClient: nil,
-	}
+var fiberRedisApp *FiberRedisApp
+
+func GetInstance() *FiberRedisApp {
+	if fiberRedisApp == nil { 
+		fiberRedisApp =  &FiberRedisApp{
+			redisClient: nil,
+		}
+	 }
+	return fiberRedisApp
 }
 
 func (fra *FiberRedisApp) Start() error {
@@ -23,7 +27,6 @@ func (fra *FiberRedisApp) Start() error {
 }
 
 func (fra *FiberRedisApp) Stop() error {
-	fmt.Println("Stopping app")
 	return fra.closeRedisClient()
 }
 
@@ -33,8 +36,6 @@ func (fra *FiberRedisApp) initRedisClient() error {
 	fra.redisClient = redis.NewClient(options)
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
-	fmt.Println(fra.redisClient)
-	time.Sleep(5 * time.Second)
 	return fra.redisClient.Ping(ctx).Err()
 }
 

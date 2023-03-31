@@ -14,22 +14,25 @@ func registerSignals() chan os.Signal {
 	return signals
 }
 
-func waitForApp(a app.App) <-chan bool {
-	done := make(chan bool)
-	go func(c chan<- bool) {
-		a.Start()
-		c <- true
+func waitForApp(a app.App) <-chan error {
+	done := make(chan error)
+	go func(c chan<- error) {
+		c <- a.Start()
 	}(done)
 	return done
 }
 
 func main() {
 	sigs := registerSignals()
-	var fra app.App = app.NewFiberRedisApp()
-	defer fra.Stop()
+	var fra app.App = app.GetInstance()
+	defer func() {
+		if err := fra.Stop(); err != nil {
+			fmt.Println("App stopped with error:", err)
+		}
+	}()
 	select {
-	case <-waitForApp(fra):
-		fmt.Println("App finished")
+	case err := <-waitForApp(fra):
+		fmt.Println("App finished with error:", err)
 	case s := <-sigs:
 		fmt.Println("Received signal:", s)
 	}
