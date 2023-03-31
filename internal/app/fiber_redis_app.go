@@ -4,10 +4,13 @@ import (
 	"context"
 	"time"
 
+	"github.com/gofiber/fiber"
+	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )
 
 type FiberRedisApp struct {
+	fiberApp *fiber.App
 	redisClient *redis.Client
 }
 
