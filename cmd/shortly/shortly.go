@@ -15,22 +15,23 @@ func registerSignals() chan os.Signal {
 }
 
 func waitForApp(a app.App) <-chan error {
-	done := make(chan error)
+	res := make(chan error)
 	go func(c chan<- error) {
 		c <- a.Start()
-	}(done)
-	return done
+	}(res)
+	return res
 }
 
 func main() {
 	sigs := registerSignals()
-	var fra app.App = app.GetInstance()
+	var sa app.App = app.GetShortlyApp()
 	defer func() {
-		err := fra.Stop()
-		fmt.Println("App stopped with error:", err)
+		if err := sa.Stop(); err != nil {
+			fmt.Println("App stopped with error:", err)
+		}
 	}()
 	select {
-	case err := <-waitForApp(fra):
+	case err := <-waitForApp(sa):
 		fmt.Println("App finished with error:", err)
 	case s := <-sigs:
 		fmt.Println("Received signal:", s)
