@@ -26,9 +26,8 @@ func main() {
 	sigs := registerSignals()
 	var fra app.App = app.GetInstance()
 	defer func() {
-		if err := fra.Stop(); err != nil {
-			fmt.Println("App stopped with error:", err)
-		}
+		err := fra.Stop()
+		fmt.Println("App stopped with error:", err)
 	}()
 	select {
 	case err := <-waitForApp(fra):

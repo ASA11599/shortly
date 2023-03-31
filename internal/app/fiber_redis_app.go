@@ -4,7 +4,6 @@ import (
 	"context"
 	"time"
 
-	"github.com/gofiber/fiber"
 	"github.com/gofiber/fiber/v2"
 	"github.com/redis/go-redis/v9"
 )
@@ -26,7 +25,9 @@ func GetInstance() *FiberRedisApp {
 }
 
 func (fra *FiberRedisApp) Start() error {
-	return fra.initRedisClient()
+	err := fra.initRedisClient()
+	if err != nil { return err }
+	return fra.initFiberApp()
 }
 
 func (fra *FiberRedisApp) Stop() error {
@@ -40,6 +41,11 @@ func (fra *FiberRedisApp) initRedisClient() error {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
 	defer cancel()
 	return fra.redisClient.Ping(ctx).Err()
+}
+
+func (fra *FiberRedisApp) initFiberApp() error {
+	fra.fiberApp = fiber.New()
+	return fra.fiberApp.Listen("0.0.0.0:8080")
 }
 
 func (fra *FiberRedisApp) closeRedisClient() error {
