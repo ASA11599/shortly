@@ -25,7 +25,7 @@ func GetShortlyApp() *ShortlyApp {
 }
 
 func (sa *ShortlyApp) Start() error {
-	rs, err := storage.GetRedisStorage()
+	rs, err := storage.GetMemoryStorage()
 	if err != nil { return err }
 	sa.storage = rs
 	sa.webApp, err = webapp.GetFiberWebApp(sa.storage)
