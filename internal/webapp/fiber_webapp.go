@@ -2,7 +2,11 @@ package webapp
 
 import (
 	"errors"
+	"net/http"
+	"net/url"
 
+	"github.com/ASA11599/shortly/internal/alias"
+	"github.com/ASA11599/shortly/internal/shortener"
 	"github.com/ASA11599/shortly/internal/storage"
 	"github.com/gofiber/fiber/v2"
 )
@@ -42,10 +46,24 @@ func (fwa *FiberWebApp) Stop() error {
 
 func (fwa *FiberWebApp) registerHandlers() {
 	fwa.fiberApp.Get("/:alias", func(c *fiber.Ctx) error {
-		alias := c.Params("alias", "")
-		return c.SendString("redirecting " + alias)
+		a := c.Params("alias", "")
+		if !alias.ValidateAlias(a) {
+			return c.SendStatus(http.StatusBadRequest)
+		}
+		expanded, err := shortener.Expand(fwa.storage, a)
+		if (err != nil) { return err }
+		if _, err := url.ParseRequestURI(expanded); err != nil {
+			return c.SendStatus(http.StatusNotFound)
+		}
+		return c.Redirect(expanded)
 	})
 	fwa.fiberApp.Post("/", func(c *fiber.Ctx) error {
-		return c.SendString("creating alias for " + string(c.Body()))
+		link := string(c.Body())
+		if _, err := url.ParseRequestURI(link); err != nil {
+			return c.SendStatus(http.StatusBadRequest)
+		}
+		a, err := shortener.Shorten(fwa.storage, link)
+		if err != nil { return err }
+		return c.SendString(a)
 	})
 }
