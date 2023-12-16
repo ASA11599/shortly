@@ -16,6 +16,9 @@ WORKDIR /
 
 COPY --from=build /usr/src/shortly/shortly .
 
-EXPOSE 8080
+ENV HOST=0.0.0.0
+ENV PORT=80
+
+EXPOSE 80
 
 CMD [ "/shortly" ]

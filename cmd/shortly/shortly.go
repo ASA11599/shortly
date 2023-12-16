@@ -2,38 +2,51 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/signal"
+	"strconv"
 
-	"github.com/ASA11599/shortly/internal/app"
+	"github.com/ASA11599/shortly/internal/handlers"
+	"github.com/ASA11599/shortly/internal/storage"
+	"github.com/go-chi/chi/v5"
 )
 
-func registerSignals() chan os.Signal {
+func interruptChannel() chan os.Signal {
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	return signals
 }
 
-func waitForApp(a app.App) <-chan error {
-	res := make(chan error)
-	go func(c chan<- error) {
-		c <- a.Start()
-	}(res)
-	return res
+func getHost() string {
+	if host, ok := os.LookupEnv("HOST"); ok {
+		return host
+	}
+	return "0.0.0.0"
+}
+
+func getPort() int {
+	if port, ok := os.LookupEnv("PORT"); ok {
+		p, err := strconv.ParseInt(port, 10, 16)
+		if err == nil {
+			return int(p)
+		}
+	}
+	return 80
 }
 
 func main() {
-	sigs := registerSignals()
-	var sa app.App = app.GetShortlyApp()
-	defer func() {
-		if err := sa.Stop(); err != nil {
-			fmt.Println("App stopped with error:", err)
-		}
-	}()
-	select {
-	case err := <-waitForApp(sa):
-		fmt.Println("App finished with error:", err)
-	case s := <-sigs:
-		fmt.Println("Received signal:", s)
-	}
+
+	mux := chi.NewRouter()
+
+	var store storage.Store = storage.NewMemoryStore()
+	defer store.Close()
+
+	mux.Get("/{alias}", handlers.GetHandler(store))
+	mux.Post("/", handlers.PostHandler(store))
+
+	go panic(http.ListenAndServe(fmt.Sprintf("%s:%d", getHost(), getPort()), mux))
+
+	<-interruptChannel()
+
 }
