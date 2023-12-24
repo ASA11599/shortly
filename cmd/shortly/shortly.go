@@ -42,8 +42,8 @@ func main() {
 	var store storage.Store = storage.NewMemoryStore()
 	defer store.Close()
 
-	mux.Get("/{alias}", handlers.GetHandler(store))
-	mux.Post("/", handlers.PostHandler(store))
+	mux.Get("/{alias}", handlers.NewGetHandler(store).ServeHTTP)
+	mux.Post("/", handlers.NewPostHandler(store).ServeHTTP)
 
 	go panic(http.ListenAndServe(fmt.Sprintf("%s:%d", getHost(), getPort()), mux))
 
