@@ -3,26 +3,31 @@ package storage
 import "sync"
 
 type MemoryStore struct {
-	sm *sync.Map
+	m map[string]string
+	lock sync.RWMutex
 }
 
 func NewMemoryStore() *MemoryStore {
 	return &MemoryStore{
-		sm: &sync.Map{},
+		m: make(map[string]string),
 	}
 }
 
 func (ms *MemoryStore) Get(key string) string {
-	v, hasKey := ms.sm.Load(key)
-	vs, isString := v.(string)
-	if !isString || !hasKey { return "" }
-	return string(vs)
+	ms.lock.RLock()
+	defer ms.lock.RUnlock()
+	return ms.m[key]
 }
 
 func (ms *MemoryStore) Set(key string, value string) {
-	ms.sm.Store(key, value)
+	ms.lock.Lock()
+	defer ms.lock.Unlock()
+	ms.m[key] = value
 }
 
 func (ms *MemoryStore) Close() {
-	ms.sm = nil
+	ms.lock.Lock()
+	defer ms.lock.Unlock()
+	clear(ms.m)
+	ms.m = nil
 }
